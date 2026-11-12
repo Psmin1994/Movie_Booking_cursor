@@ -1,0 +1,229 @@
+---
+description: 클라이언트 TanStack Query의 Query/Mutation 책임 경계
+alwaysApply: true
+---
+
+# Query / Mutation 책임 경계
+
+이 Rule은 Client에서 TanStack Query의 `useQuery`와 `useMutation`을 작성하거나 수정할 때의 책임 경계를 정한다.
+
+React Query와 Zustand의 선택, Source of Truth, 서버 상태의 이중 관리는 `state-management.mdc`를 따른다. Feature 내부의 `queries/`와 `mutations/` 위치는 `feature-architecture.mdc`를 따른다. HTTP 호출 경로는 `frontend-api.mdc`를 따른다.
+
+## 기본 원칙
+
+서버 데이터를 조회하는 작업은 Query가 담당하고, 서버에 생성·변경·삭제 또는 특정 작업/명령을 요청하는 작업은 Mutation이 담당한다. Payment 승인처럼 서버의 action/command를 요청하는 경우도 Mutation이다. HTTP method만으로 Query와 Mutation을 결정하지 않는다.
+
+클라이언트는 UX와 서버 상태 동기화를 담당하고, 서버는 비즈니스 규칙과 데이터 무결성을 최종적으로 담당한다.
+
+## Query
+
+TanStack Query의 `useQuery`를 서버 상태 조회에 사용한다.
+
+Query는 다음을 담당한다.
+
+* API 조회 함수 호출
+* queryKey 정의
+* HTTP 응답을 애플리케이션 에러로 변환
+* 서버에서 반환한 데이터 제공
+* 필요한 Query 옵션 설정
+
+Query에서 다음을 구현하지 않는다.
+
+* 서버 비즈니스 규칙의 최종 검증
+* 서버 상태 변경
+* 별도의 Promise Map이나 수동 request cache
+* 서버 데이터 무결성을 보장하기 위한 클라이언트 방어 로직
+
+TanStack Query가 제공하는 query cache, staleTime, refetch는 `state-management.mdc`의 React Query 책임이다. 그 위에 수동 request cache를 덧붙이지 않는다.
+
+## Mutation
+
+TanStack Query의 `useMutation`을 서버 상태 변경에 사용한다.
+
+예:
+
+* 생성
+* 수정
+* 삭제
+* 상태 전이
+* 결제 요청
+* 결제 승인
+* 예매 취소
+
+Mutation은 다음을 담당한다.
+
+* API mutation 함수 호출
+* HTTP 응답을 애플리케이션 에러로 변환
+* React Query lifecycle 처리
+* `isPending`, `isError`, `isSuccess` 등의 상태 제공
+* 성공 후 관련 Query invalidate
+
+Mutation은 가능한 한 얇게 유지한다.
+
+기본 구조는 다음과 같다.
+
+```ts
+useMutation({
+  mutationFn: apiFunction,
+  onSuccess: (_data, variables) => {
+    // 관련 Query invalidate
+  },
+});
+```
+
+## 서버 검증을 클라이언트에 복제하지 않는다
+
+다음과 같은 검증을 Mutation의 최종 방어 수단으로 구현하지 않는다.
+
+* Booking 소유권
+* Payment 존재 여부
+* Booking 상태
+* Payment 상태
+* 중복 생성
+* 중복 상태 변경
+* 권한
+* 데이터 무결성
+
+이러한 검증은 서버가 최종적으로 담당한다.
+
+클라이언트에서 현재 Query data를 보고 버튼을 숨기거나 비활성화하는 것은 UX 처리로 허용한다. 이 처리는 서버 검증을 대체하지 않는다.
+
+## 수동 Promise Cache / Request Deduplication 금지
+
+Query나 Mutation에서 Promise Map 등을 이용한 수동 request deduplication을 구현하지 않는다.
+
+예:
+
+```ts
+const requests = new Map();
+```
+
+Promise를 Map에 저장하여 같은 요청을 공유하는 패턴을 새로 추가하지 않는다.
+
+중복 요청에 대한 최종 방어는 서버와 DB가 담당한다.
+
+## UX 수준의 중복 방어는 허용
+
+다음은 허용한다.
+
+```tsx
+<button disabled={mutation.isPending}>
+```
+
+그리고:
+
+* 요청 중 로딩 표시
+* 연속 클릭 방지
+* effect lifecycle에서 동일 작업의 불필요한 반복 실행 방지
+
+이 처리는 UX 방어이며 데이터 무결성 보장 수단이 아니다.
+
+## Mutation 성공 후 Query 동기화
+
+Mutation으로 변경된 서버 상태를 기존 Query cache가 보유하고 있고, UI가 그 Query를 통해 표시하거나 해당 Query의 최신 상태가 필요하다면 관련 Query를 invalidate한다.
+
+예:
+
+```ts
+onSuccess: (_data, variables) => {
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.bookingDetail(variables.bookingId),
+  });
+}
+```
+
+기본적인 흐름은 다음과 같다.
+
+```text
+Mutation
+  ↓
+서버 상태 변경
+  ↓
+invalidateQueries
+  ↓
+Query 재조회
+  ↓
+최신 서버 상태 반영
+```
+
+Mutation 결과를 별도의 서버 상태 저장소에 복사하지 않는다. 서버 상태를 Zustand에 두지 않는 기준은 `state-management.mdc`를 따른다.
+
+Mutation 성공 결과를 즉시 UI에 임시로 사용하는 것은 허용한다. 이후 관련 Query가 서버의 최신 상태를 다시 가져오도록 한다.
+
+## API Client와 React Query 분리
+
+API 함수는 React Query를 알지 않아야 한다.
+
+예:
+
+```ts
+createPayment(dto)
+getBookingDetail(bookingId)
+payPayment(dto)
+```
+
+위 함수는 `frontend-api.mdc`의 `client-request` / `server-request`와 `@movie-booking/api-client`를 뜻한다. 이 Rule 때문에 별도의 API client를 만들지 않는다.
+
+API 함수는 HTTP 요청/응답을 담당한다.
+
+React Query의 QueryClient, invalidateQueries, mutation lifecycle 등은 Feature의 `queries/`와 `mutations/` custom hook에서 담당한다.
+
+구조:
+
+```text
+Component
+  ↓
+useQuery / useMutation
+  ↓
+client-request / server-request
+  ↓
+packages/api-client
+  ↓
+HTTP API
+  ↓
+Server
+```
+
+## 서버를 최종 권위자로 취급
+
+다음은 서버가 최종적으로 책임진다.
+
+* 인증
+* 권한
+* 리소스 소유권
+* 상태 전이 가능 여부
+* 중복 생성 방지
+* 중복 상태 변경 방지
+* 트랜잭션
+* DB 제약
+* 데이터 무결성
+* 외부 결제 시스템과의 일관성
+* 필요한 경우 Idempotency
+
+클라이언트 검증은 UX를 위한 사전 안내일 수 있다. 서버 검증을 대체하지 않는다.
+
+서버 endpoint의 resource/action 설계는 `api-design.mdc`를 따른다.
+
+## 새 Query/Mutation을 구현할 때의 판단 순서
+
+새로운 Query/Mutation을 만들거나 수정할 때 다음 순서를 따른다.
+
+1. 서버 API의 책임과 검증 규칙을 확인한다.
+2. `frontend-api.mdc`에 따라 API 함수를 확인하거나 만든다.
+3. 서버 데이터 조회이면 `useQuery`를 사용한다. 생성·변경·삭제 또는 특정 작업/명령 요청이면 `useMutation`을 사용한다. Payment 승인 같은 action/command도 Mutation이다. HTTP method만으로 결정하지 않는다.
+4. Query/Mutation hook은 가능한 한 얇게 유지한다.
+5. 서버 검증 로직을 클라이언트에 복제하지 않는다.
+6. Promise Map이나 수동 request cache를 추가하지 않는다.
+7. UX에는 `isPending`, `isError` 등을 사용한다.
+8. 변경된 서버 상태를 기존 Query cache가 보유하고 있고, UI가 그 Query의 최신 상태를 필요로 하면 관련 Query를 invalidate한다.
+9. 필요한 경우 Mutation 결과를 일시적으로 사용한다.
+10. 동시성, 중복 요청, 데이터 무결성 문제는 서버/DB 설계를 먼저 확인한다.
+
+## 다른 Rule과의 관계
+
+이 Rule은 Client Query/Mutation hook의 책임 경계만 담당한다.
+
+* React Query를 쓸지, Zustand나 local state를 쓸지는 `state-management.mdc`에서 결정한다.
+* hook 파일 위치는 `feature-architecture.mdc`를 따른다.
+* HTTP 호출 방식과 fetcher 선택은 `frontend-api.mdc`를 따른다.
+* 서버의 비즈니스 규칙과 endpoint 설계는 `api-design.mdc`와 서버 구현을 따른다.

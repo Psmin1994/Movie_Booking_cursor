@@ -1,0 +1,98 @@
+---
+description: NestJS API 환경 변수 및 애플리케이션 설정 관리 규칙
+alwaysApply: true
+---
+
+# Environment Configuration
+
+## 1. 기본 원칙
+
+- 환경 변수는 애플리케이션 실행 환경에서 주입되는 외부 설정으로 취급한다.
+- `apps/api`가 API 서버의 환경 변수 소유권을 가진다.
+- 실제 환경 변수 값은 `apps/api/.env`에서 관리한다.
+- 필수 환경 변수와 예시 값은 `apps/api/.env.example`에 문서화한다.
+- `packages/*`는 `.env` 파일을 소유하거나 자체적으로 환경 변수를 관리하지 않는다.
+
+## 2. 환경 변수 Validation
+
+- 환경 변수 validation은 `apps/api/src/config/env.validation.ts`에서 관리한다.
+- validation 라이브러리는 Joi를 사용한다.
+- 새로운 환경 변수를 추가할 때 반드시 `env.validation.ts`에 validation 규칙을 추가한다.
+- 필수 환경 변수는 명시적으로 required 처리한다.
+- 숫자, URL, enum 등 값의 형식과 범위를 가능한 한 validation 단계에서 검증한다.
+- 잘못된 환경 변수로 애플리케이션이 실행되지 않도록 fail-fast를 유지한다.
+
+## 3. Configuration Factory
+
+- 환경 변수와 애플리케이션 내부 설정의 매핑은 `apps/api/src/config/configuration.ts`에서 관리한다.
+- `configuration.ts`는 환경 변수 이름을 애플리케이션 설정 구조로 변환하는 역할만 담당한다.
+- 설정 이름은 환경 변수 이름을 그대로 애플리케이션 코드에 노출하지 않고 의미 있는 namespace를 사용한다.
+- 예:
+  - `PORT` → `app.port`
+  - `NODE_ENV` → `app.nodeEnv`
+  - `WEB_ORIGIN` → `app.webOrigin`
+  - `JWT_SECRET` → `auth.jwtSecret`
+  - `JWT_EXPIRES_DAYS` → `auth.jwtExpiresDays`
+  - `DATABASE_URL` → `database.url`
+
+## 4. ConfigService 사용
+
+- 애플리케이션 코드에서 `process.env`를 직접 사용하지 않는다.
+- 환경 변수 또는 애플리케이션 설정이 필요한 경우 `ConfigService`를 사용한다.
+- 새로운 설정을 추가할 때 `configuration.ts`에 먼저 매핑한 후 `ConfigService`를 통해 사용한다.
+- 환경 변수에 대한 기본값을 개별 애플리케이션 코드에서 임의로 추가하지 않는다.
+- 기본값이 필요한 경우 configuration 설계 단계에서 명시적으로 결정한다.
+
+## 5. 새로운 환경 변수 추가 절차
+
+새로운 환경 변수가 필요한 경우 다음 세 곳을 함께 검토한다.
+
+1. `apps/api/.env`
+   - 로컬 실행에 필요한 실제 값을 추가한다.
+
+2. `apps/api/.env.example`
+   - 필요한 환경 변수와 예시 값을 문서화한다.
+   - 실제 secret 값은 포함하지 않는다.
+
+3. `apps/api/src/config/env.validation.ts`
+   - Joi validation 규칙을 추가한다.
+
+4. `apps/api/src/config/configuration.ts`
+   - 애플리케이션 내부 설정 namespace에 매핑한다.
+
+이후 사용하는 코드에서는 `process.env`를 직접 접근하지 않고 `ConfigService`를 사용한다.
+
+## 6. 설정 책임 분리
+
+- `env.validation.ts`
+  - 환경 변수의 유효성 검증을 담당한다.
+
+- `configuration.ts`
+  - 환경 변수를 애플리케이션 설정 구조로 매핑한다.
+
+- `ConfigService`
+  - 애플리케이션 코드에서 설정을 조회하는 진입점이다.
+
+- `.env`
+  - 로컬 실행 환경의 실제 값을 관리한다.
+
+- `.env.example`
+  - 필요한 환경 변수의 계약과 예시를 문서화한다.
+
+각 파일의 책임을 서로 중복시키지 않는다.
+
+## 7. Secret 관리
+
+- `JWT_SECRET`과 같은 secret을 소스 코드에 하드코딩하지 않는다.
+- secret을 `configuration.ts`의 기본값으로 제공하지 않는다.
+- `.env.example`에는 실제 secret을 기록하지 않는다.
+- secret을 로그에 출력하지 않는다.
+
+## 8. 변경 시 확인
+
+환경 변수 관련 변경 후 다음을 확인한다.
+
+- `apps/api/.env.example`과 validation schema가 일치하는지 확인한다.
+- configuration factory에 필요한 매핑이 존재하는지 확인한다.
+- 애플리케이션 코드에 새로운 직접적인 `process.env` 접근이 생기지 않았는지 확인한다.
+- build 및 typecheck를 실행한다.

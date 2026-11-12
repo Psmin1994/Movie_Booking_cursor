@@ -1,0 +1,40 @@
+{
+  "name": "@movie-booking/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "imports": {
+    "#fetcher-env": {
+      "types": "./src/fetcher/client.ts",
+      "react-server": "./dist/fetcher/server.js",
+      "node": "./dist/fetcher/server.js",
+      "browser": "./dist/fetcher/client.js",
+      "default": "./dist/fetcher/client.js"
+    }
+  },
+  "scripts": {
+    "generate": "orval",
+    "build": "pnpm generate && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "lint": "echo \"No lint configured yet\""
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.4.1",
+    "@movie-booking/typescript-config": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
+    "orval": "^7.6.0",
+    "ts-jest": "^29.4.12",
+    "typescript": "^5.7.3"
+  }
+}

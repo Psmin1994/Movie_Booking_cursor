@@ -1,0 +1,173 @@
+---
+description: 기능 단위 Feature 구조 및 기본 책임 정의
+alwaysApply: true
+---
+
+# Feature Architecture
+
+## 1. 기본 원칙
+
+- `features/`는 애플리케이션의 비즈니스 기능을 기능 단위로 관리한다.
+- Feature는 특정 비즈니스 도메인 또는 사용자 기능을 기준으로 나눈다.
+- 실제 기능이 필요해질 때 Feature를 생성한다.
+- 사용하지 않는 빈 디렉터리는 미리 생성하지 않는다.
+- Feature 내부 구조는 기능의 규모와 필요에 따라 점진적으로 확장한다.
+
+예시:
+
+```text
+features/
+├── auth/
+├── movie/
+├── theater/
+├── schedule/
+├── reservation/
+└── payment/
+```
+
+위 목록은 향후 확장 예시이며, 실제로 필요한 Feature만 생성한다.
+
+---
+
+## 2. Feature 내부 구조
+
+Feature 내부는 필요한 책임에 따라 구성한다.
+
+예:
+
+```text
+features/
+└── auth/
+    ├── components/
+    ├── queries/
+    ├── mutations/
+    └── stores/
+```
+
+모든 Feature가 동일한 구조를 가질 필요는 없다.
+
+기능이 작다면 더 단순하게 유지하고, 규모가 커질 때 필요한 디렉터리를 추가한다.
+
+---
+
+## 3. React Query
+
+React Query를 사용하는 Feature의 서버 상태 로직은 해당 Feature 내부에서 관리한다.
+
+- 조회 로직 → `queries/`
+- 변경 로직 → `mutations/`
+
+예:
+
+```text
+features/movie/
+├── queries/
+└── mutations/
+```
+
+React Query의 상태 관리 원칙은 `state-management.mdc`를 따른다. Query와 Mutation의 책임 경계는 `query-mutation.mdc`를 따른다.
+
+---
+
+## 4. Zustand Store
+
+Feature에서 여러 컴포넌트가 공유해야 하는 Client State는 해당 Feature의 `stores/`에서 관리한다.
+
+예:
+
+```text
+features/reservation/
+└── stores/
+    └── reservation-store.ts
+```
+
+- Zustand를 사용하는 Feature는 필요에 따라 `stores/`를 생성한다.
+- 모든 Feature가 `stores/`를 가질 필요는 없다.
+- 서버 상태를 Zustand Store에 저장하지 않는다.
+- 컴포넌트 내부에서만 사용하는 상태는 `useState`를 우선 사용한다.
+
+상태 관리에 대한 상세 규칙은 `state-management.mdc`를 따른다.
+
+---
+
+## 5. Feature 전용 UI
+
+특정 Feature에 종속된 UI는 해당 Feature 내부에서 관리한다.
+
+```text
+features/movie/
+└── components/
+```
+
+여러 Feature에서 공통으로 사용하는 UI는 기존 `components/` 영역에서 관리한다.
+
+---
+
+## 6. API 사용
+
+Feature는 기존 API 호출 구조를 사용한다.
+
+```text
+Feature
+  ↓
+client-request / server-request
+  ↓
+packages/api-client
+  ↓
+API Server
+```
+
+- `packages/api-client`의 generated API를 사용한다.
+- generated API와 fetcher 구조를 임의로 수정하지 않는다.
+- Feature마다 별도의 API client를 만들지 않는다.
+
+---
+
+## 7. Feature 간 의존성
+
+가능하면 Feature 간 내부 구현에 직접 의존하지 않는다.
+
+다른 Feature에서 공통으로 필요한 UI, 타입, 유틸리티 등이 생기면 적절한 공통 영역으로 이동하는 것을 고려한다.
+
+단, 실제 공유 필요성이 확인되기 전에 미리 공통화하지 않는다.
+
+구체적인 구조는 실제 사용 사례를 기준으로 결정한다.
+
+---
+
+## 8. 점진적인 확장
+
+Feature 구조를 처음부터 완성하지 않는다.
+
+예를 들어 현재 인증 기능은:
+
+```text
+features/auth/
+└── mutations/
+    └── use-login-mutation.ts
+```
+
+Profile Query가 필요해지면:
+
+```text
+features/auth/
+├── queries/
+│   └── use-profile-query.ts
+└── mutations/
+    └── use-login-mutation.ts
+```
+
+Client State가 필요한 Feature가 생기면:
+
+```text
+features/reservation/
+├── queries/
+├── mutations/
+├── components/
+└── stores/
+    └── reservation-store.ts
+```
+
+처럼 필요한 구조를 추가한다.
+
+**필요하지 않은 디렉터리를 미리 만들지 않는다.**

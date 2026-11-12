@@ -1,0 +1,41 @@
+{
+  "name": "@movie-booking/database-prisma",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "imports": {
+    "#prisma-client": {
+      "types": "./generated/client/client.ts",
+      "default": "./dist/generated/client/client.js"
+    }
+  },
+  "scripts": {
+    "clean": "node ./scripts/clean.mjs",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.generated.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"No lint configured yet\"",
+    "generate": "prisma generate",
+    "validate": "prisma validate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy"
+  },
+  "devDependencies": {
+    "@movie-booking/typescript-config": "workspace:*",
+    "@types/node": "^22.10.7",
+    "dotenv": "^17.4.2",
+    "prisma": "7.10.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@prisma/client": "7.10.0"
+  }
+}

@@ -1,0 +1,210 @@
+---
+description: React Query와 Zustand의 역할 및 상태 관리 원칙
+alwaysApply: true
+---
+
+# 상태 관리 아키텍처
+
+## 기본 원칙
+
+* React Query는 **Client에서 소비되는 Server State**를 관리한다.
+* Zustand는 **Client State**를 관리한다.
+* 상태의 Source of Truth와 **데이터가 소비되는 실행 환경**을 기준으로 사용 기술을 결정한다.
+* 서버가 Source of Truth인 데이터 중 Client에서 지속적으로 소비하거나 캐싱, 재검증, mutation 연계가 필요한 데이터는 React Query를 우선 사용한다.
+* 클라이언트가 Source of Truth인 상태는 Zustand 또는 React local state를 사용한다.
+* 동일한 상태를 React Query와 Zustand에서 동시에 Source of Truth로 관리하지 않는다.
+* Server Component의 데이터 패칭까지 React Query 사용을 강제하지 않는다.
+
+---
+
+## React Query
+
+React Query는 **Client Component에서 소비되는 Server State의 조회와 생명주기**를 관리한다.
+
+### 책임
+
+* fetching
+* caching
+* staleTime
+* refetch
+* loading / fetching 상태
+* error 상태
+* mutation
+* invalidate
+* query cache 관리
+* 필요한 경우 SSR prefetch
+* 필요한 경우 dehydration / hydration
+
+Query와 Mutation hook 내부의 책임 경계는 `query-mutation.mdc`를 따른다.
+
+### React Query 사용 기준
+
+다음과 같은 경우 React Query를 우선 고려한다.
+
+* Client Component에서 API 데이터를 사용하는 경우
+* 여러 Client Component에서 동일한 서버 데이터를 공유하는 경우
+* 서버 데이터의 caching이 필요한 경우
+* stale / refetch 정책이 필요한 경우
+* 사용자 인터랙션에 따라 서버 데이터를 다시 조회해야 하는 경우
+* mutation 이후 관련 서버 데이터를 invalidate 또는 갱신해야 하는 경우
+* Client에서 서버 데이터의 loading / error 상태를 관리해야 하는 경우
+
+### Server Component와의 관계
+
+Server Component가 서버에서 데이터를 조회하여 **SSR/RSC 렌더링에 직접 사용하는 경우**, 해당 데이터 패칭까지 React Query를 강제하지 않는다.
+
+예:
+
+```text
+Server Component
+    ↓
+server-request
+    ↓
+API Client
+    ↓
+API Server
+```
+
+다음과 같은 경우에는 Server Component에서 React Query의 SSR prefetch / dehydration / hydration을 사용할 수 있다.
+
+* 조회한 데이터를 Client Component에서도 계속 사용해야 하는 경우
+* Client Component에서 React Query cache를 활용해야 하는 경우
+* Server에서 최초 데이터를 prefetch하고 Client에서 동일 query를 이어서 관리해야 하는 경우
+
+즉, **Server Component에서 데이터를 조회한다는 이유만으로 React Query를 도입하지 않는다.**
+
+### Server State 예시
+
+React Query의 관리 대상이 될 수 있는 Server State:
+
+* API response
+* profile / user info
+* 영화 목록
+* 영화 상세 정보
+* 상영시간
+* 좌석 정보
+* 예매 정보
+* 서버에서 생성 / 수정 / 삭제하는 데이터
+
+단, 위 데이터가 Server Component에서 SSR/RSC 렌더링을 위해 일회성으로 사용되는 경우에는 React Query 사용을 강제하지 않는다.
+
+---
+
+## Zustand
+
+Zustand는 애플리케이션 내부의 **Client State**를 관리한다.
+
+### 책임
+
+* 여러 컴포넌트에서 공유해야 하는 Client State
+* UI State
+* 사용자 인터랙션 상태
+* 클라이언트에서만 존재하는 상태
+* 페이지 또는 기능의 임시 상태
+* 클라이언트 상태의 변경 규칙
+
+### Client State 예시
+
+* modal open / close
+* selected tab
+* 현재 UI 단계
+* 좌석 선택과 같은 클라이언트 인터랙션 상태
+* 사용자 입력에 의해 만들어지는 임시 상태
+* 여러 컴포넌트에서 공유해야 하는 UI 상태
+
+단순히 한 컴포넌트에서만 사용하는 상태는 Zustand보다 React local state를 우선 고려한다.
+
+---
+
+## Zustand에서 Server State를 관리하지 않는다
+
+특별한 아키텍처상의 이유가 없다면 다음과 같은 구조를 만들지 않는다.
+
+* API response를 Zustand store에 저장
+* Zustand store에서 서버 데이터를 fetching
+* Zustand에서 서버 데이터의 loading / error 상태 관리
+* React Query의 cache와 동일한 서버 데이터를 Zustand에 복사
+* React Query의 refetch / invalidate와 별도의 서버 데이터 동기화 로직 구현
+
+예를 들어 서버에서 가져온 `profile` 데이터를 다음과 같이 이중 관리하지 않는다.
+
+```text
+React Query
+└── profile
+
+Zustand
+└── profile
+```
+
+서버가 Source of Truth인 `profile`은 서버에서 관리하고, Client에서 소비해야 하는 경우 React Query를 사용한다.
+
+---
+
+## React Local State
+
+모든 Client State를 Zustand로 관리하지 않는다.
+
+다음과 같이 **단일 컴포넌트 내부에서만 필요한 상태**는 React local state를 우선 사용한다.
+
+* input value
+* form state
+* dropdown open / close
+* 단일 컴포넌트의 loading 보조 상태
+* 단일 컴포넌트에서만 사용하는 임시 UI 상태
+
+예:
+
+```tsx
+const [email, setEmail] = useState('');
+const [password, setPassword] = useState('');
+```
+
+이러한 상태를 공유할 필요가 없다면 Zustand store를 생성하지 않는다.
+
+---
+
+## 상태 관리 선택 기준
+
+상태를 추가하기 전에 다음 순서로 판단한다.
+
+### 1. Source of Truth가 어디에 있는가?
+
+```text
+Server
+  → Server State
+  → React Query 고려
+
+Client
+  → Client State
+  → React local state / Zustand 고려
+```
+
+### 2. 어디에서 소비하는가?
+
+```text
+Server Component
+  → server-request를 통한 서버 데이터 패칭 우선
+
+Client Component
+  → 지속적인 Server State 관리가 필요하면 React Query
+
+Client 내부의 단순한 상태
+  → React local state 우선
+
+여러 컴포넌트에서 공유되는 Client State
+  → Zustand 고려
+```
+
+### 3. 같은 데이터를 중복 관리하고 있지 않은가?
+
+다음과 같은 중복 Source of Truth를 만들지 않는다.
+
+```text
+Server
+  ↓
+React Query
+  ↓
+Zustand
+```
+
+서버 데이터는 가능한 한 하나의 명확한 Source of Truth를 유지한다.

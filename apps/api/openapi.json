@@ -1,0 +1,1615 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "서비스 상태 확인",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/auth/signup": {
+      "post": {
+        "operationId": "AuthController_signup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "이미 사용 중인 이메일"
+          }
+        },
+        "summary": "회원가입",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패"
+          }
+        },
+        "summary": "로그인",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "로그아웃",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요"
+          }
+        },
+        "summary": "내 정보 조회",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/bookings": {
+      "get": {
+        "operationId": "BookingController_getMyBookings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GetMyBookingResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요"
+          }
+        },
+        "summary": "내 예매 목록 조회",
+        "tags": [
+          "bookings"
+        ]
+      },
+      "post": {
+        "operationId": "BookingController_createBooking",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요"
+          }
+        },
+        "summary": "예매 생성",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/bookings/{bookingId}": {
+      "get": {
+        "operationId": "BookingController_getBookingDetail",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBookingDetailResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요"
+          },
+          "404": {
+            "description": "예매를 찾을 수 없습니다."
+          }
+        },
+        "summary": "내 예매 상세 조회",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/bookings/{bookingId}/cancel": {
+      "post": {
+        "operationId": "BookingController_cancelBooking",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "인증 필요"
+          },
+          "404": {
+            "description": "예매를 찾을 수 없습니다."
+          },
+          "409": {
+            "description": "이미 취소된 예매입니다. 또는 취소할 수 없는 예매입니다."
+          }
+        },
+        "summary": "예매 취소",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/bookings/{bookingId}/cancel-pending": {
+      "post": {
+        "operationId": "BookingController_cancelPendingBooking",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "인증 필요"
+          },
+          "404": {
+            "description": "예매를 찾을 수 없습니다."
+          },
+          "409": {
+            "description": "취소할 수 없는 예매입니다."
+          }
+        },
+        "summary": "결제 전 예매 취소",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/screenings": {
+      "post": {
+        "operationId": "ScreeningController_createScreening",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScreeningDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScreeningResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "영화 또는 상영관을 찾을 수 없습니다."
+          },
+          "409": {
+            "description": "해당 상영관에 같은 시작 시각의 상영이 이미 있습니다."
+          }
+        },
+        "summary": "상영 생성",
+        "tags": [
+          "screenings"
+        ]
+      }
+    },
+    "/api/screenings/{screeningId}/seats": {
+      "get": {
+        "operationId": "ScreeningController_getScreeningSeats",
+        "parameters": [
+          {
+            "name": "screeningId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetScreeningSeatsResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "상영을 찾을 수 없습니다."
+          },
+          "409": {
+            "description": "이미 시작된 상영의 좌석은 조회할 수 없습니다."
+          }
+        },
+        "summary": "상영 좌석 현황 조회",
+        "tags": [
+          "screenings"
+        ]
+      }
+    },
+    "/api/screenings/{id}": {
+      "get": {
+        "operationId": "ScreeningController_getScreening",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetScreeningResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "상영을 찾을 수 없습니다."
+          }
+        },
+        "summary": "상영 조회",
+        "tags": [
+          "screenings"
+        ]
+      }
+    },
+    "/api/movies/{movieId}/screenings": {
+      "get": {
+        "operationId": "MovieScreeningsController_listScreeningsByMovieAndDate",
+        "parameters": [
+          {
+            "name": "movieId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "YYYY-MM-DD calendar date",
+            "schema": {
+              "format": "date",
+              "example": "2026-09-20",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListScreeningsByMovieAndDateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "date가 YYYY-MM-DD 형식의 실제 calendar date가 아닙니다."
+          }
+        },
+        "summary": "영화 날짜별 상영 목록 조회",
+        "tags": [
+          "screenings"
+        ]
+      }
+    },
+    "/api/movies": {
+      "get": {
+        "operationId": "MovieController_getMovies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MovieSummaryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "영화 목록 조회",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/api/movies/{id}": {
+      "get": {
+        "operationId": "MovieController_getMovie",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieDetailResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "영화를 찾을 수 없습니다."
+          }
+        },
+        "summary": "영화 상세 조회",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/api/payments": {
+      "post": {
+        "operationId": "PaymentController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePaymentResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요"
+          },
+          "404": {
+            "description": "예매를 찾을 수 없습니다."
+          },
+          "409": {
+            "description": "이미 결제가 생성된 예매입니다. 또는 결제할 수 없는 예매입니다."
+          }
+        },
+        "summary": "결제 생성",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/payments/{paymentId}": {
+      "post": {
+        "description": "승인은 PAID, FAILED, RECONCILIATION_REQUIRED 중 하나의 최종 상태로 응답한다. PAID는 paidAt을, FAILED는 failedAt을 포함한다. RECONCILIATION_REQUIRED는 기한까지 승인 결과를 확정하지 못한 상태이다.",
+        "operationId": "PaymentController_pay",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PaymentResponseDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FailedPaymentResponseDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReconciliationRequiredPaymentResponseDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요"
+          },
+          "404": {
+            "description": "결제를 찾을 수 없습니다."
+          },
+          "409": {
+            "description": "결제할 수 없는 상태입니다. 또는 결제 가능 시간이 만료되었습니다. 응답 본문에는 최종 Payment 상태가 포함되지 않습니다."
+          }
+        },
+        "summary": "결제 승인",
+        "tags": [
+          "payments"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Movie Booking API",
+    "description": "영화 예매 서비스 API",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "HealthResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "service": {
+            "type": "string",
+            "example": "movie-booking-api"
+          }
+        },
+        "required": [
+          "status",
+          "service"
+        ]
+      },
+      "SignupDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123",
+            "minLength": 8
+          },
+          "name": {
+            "type": "string",
+            "example": "홍길동"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name"
+        ]
+      },
+      "ProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "홍길동"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-08-19T03:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "createdAt"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "MessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "로그아웃되었습니다."
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "GetMyBookingMovieDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "example": "Inception"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "GetMyBookingScreeningDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T01:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "startAt"
+        ]
+      },
+      "GetMyBookingScreenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          },
+          "floor": {
+            "type": "number",
+            "example": 2
+          },
+          "screenType": {
+            "type": "string",
+            "example": "IMAX"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "floor",
+          "screenType"
+        ]
+      },
+      "GetMyBookingSeatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440010"
+          },
+          "row": {
+            "type": "string",
+            "example": "A"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "row",
+          "number"
+        ]
+      },
+      "GetMyBookingResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "status": {
+            "type": "string",
+            "example": "CONFIRMED"
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-09-20T10:30:00.000Z"
+          },
+          "movie": {
+            "$ref": "#/components/schemas/GetMyBookingMovieDto"
+          },
+          "screening": {
+            "$ref": "#/components/schemas/GetMyBookingScreeningDto"
+          },
+          "screen": {
+            "$ref": "#/components/schemas/GetMyBookingScreenDto"
+          },
+          "seats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GetMyBookingSeatDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "confirmedAt",
+          "movie",
+          "screening",
+          "screen",
+          "seats"
+        ]
+      },
+      "GetBookingDetailMovieDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "example": "Inception"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "GetBookingDetailScreeningDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T01:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "startAt"
+        ]
+      },
+      "GetBookingDetailScreenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          },
+          "floor": {
+            "type": "number",
+            "example": 2
+          },
+          "screenType": {
+            "type": "string",
+            "example": "IMAX"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "floor",
+          "screenType"
+        ]
+      },
+      "GetBookingDetailSeatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440010"
+          },
+          "row": {
+            "type": "string",
+            "example": "A"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "row",
+          "number"
+        ]
+      },
+      "BookingPaymentRefundResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440040"
+          },
+          "amount": {
+            "type": "number",
+            "example": 10000
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          },
+          "failedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "status",
+          "completedAt",
+          "failedAt"
+        ]
+      },
+      "BookingPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440030"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "ord_550e8400-e29b-41d4-a716-446655440030"
+          },
+          "amount": {
+            "type": "number",
+            "example": 10000
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          },
+          "refunds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingPaymentRefundResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "amount",
+          "status",
+          "paidAt",
+          "refunds"
+        ]
+      },
+      "GetBookingDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "status": {
+            "type": "string",
+            "example": "CONFIRMED"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T10:30:00.000Z"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T10:40:00.000Z"
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-09-20T10:30:00.000Z"
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          },
+          "movie": {
+            "$ref": "#/components/schemas/GetBookingDetailMovieDto"
+          },
+          "screening": {
+            "$ref": "#/components/schemas/GetBookingDetailScreeningDto"
+          },
+          "screen": {
+            "$ref": "#/components/schemas/GetBookingDetailScreenDto"
+          },
+          "seats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GetBookingDetailSeatDto"
+            }
+          },
+          "payment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookingPaymentResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "expiresAt",
+          "confirmedAt",
+          "cancelledAt",
+          "movie",
+          "screening",
+          "screen",
+          "seats",
+          "payment"
+        ]
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "screeningId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "screeningSeatIds": {
+            "example": [
+              "550e8400-e29b-41d4-a716-446655440010"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "screeningId",
+          "screeningSeatIds"
+        ]
+      },
+      "BookingResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CreateScreeningDto": {
+        "type": "object",
+        "properties": {
+          "movieId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "screenId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "movieId",
+          "screenId",
+          "startAt"
+        ]
+      },
+      "ScreeningResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "movieId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "screenId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "movieId",
+          "screenId",
+          "startAt"
+        ]
+      },
+      "GetScreeningSeatsSeatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440010"
+          },
+          "row": {
+            "type": "string",
+            "example": "A"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "example": "AVAILABLE"
+          }
+        },
+        "required": [
+          "id",
+          "row",
+          "number",
+          "status"
+        ]
+      },
+      "GetScreeningSeatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "seats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GetScreeningSeatsSeatDto"
+            }
+          }
+        },
+        "required": [
+          "seats"
+        ]
+      },
+      "GetScreeningMovieDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "example": "Inception"
+          },
+          "posterUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/posters/inception.jpg"
+          },
+          "runtime": {
+            "type": "number",
+            "example": 148
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "posterUrl",
+          "runtime"
+        ]
+      },
+      "GetScreeningScreenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          },
+          "floor": {
+            "type": "number",
+            "example": 3
+          },
+          "screenType": {
+            "type": "string",
+            "example": "IMAX"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "floor",
+          "screenType"
+        ]
+      },
+      "GetScreeningSeatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440010"
+          },
+          "seatId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440011"
+          },
+          "row": {
+            "type": "string",
+            "example": "A"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          },
+          "seatType": {
+            "type": "string",
+            "example": "STANDARD"
+          },
+          "status": {
+            "type": "string",
+            "example": "AVAILABLE"
+          }
+        },
+        "required": [
+          "id",
+          "seatId",
+          "row",
+          "number",
+          "seatType",
+          "status"
+        ]
+      },
+      "GetScreeningResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-20T10:30:00.000Z"
+          },
+          "movie": {
+            "$ref": "#/components/schemas/GetScreeningMovieDto"
+          },
+          "screen": {
+            "$ref": "#/components/schemas/GetScreeningScreenDto"
+          },
+          "seats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GetScreeningSeatDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "startAt",
+          "movie",
+          "screen",
+          "seats"
+        ]
+      },
+      "ListScreeningsByMovieAndDateScreenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "number": {
+            "type": "number",
+            "example": 1
+          },
+          "floor": {
+            "type": "number",
+            "example": 2
+          },
+          "screenType": {
+            "type": "string",
+            "example": "IMAX"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "floor",
+          "screenType"
+        ]
+      },
+      "ListScreeningsByMovieAndDateScreeningDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "startTime": {
+            "type": "string",
+            "example": "10:00"
+          }
+        },
+        "required": [
+          "id",
+          "startTime"
+        ]
+      },
+      "ListScreeningsByMovieAndDateScreenGroupDto": {
+        "type": "object",
+        "properties": {
+          "screen": {
+            "$ref": "#/components/schemas/ListScreeningsByMovieAndDateScreenDto"
+          },
+          "screenings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListScreeningsByMovieAndDateScreeningDto"
+            }
+          }
+        },
+        "required": [
+          "screen",
+          "screenings"
+        ]
+      },
+      "ListScreeningsByMovieAndDateResponseDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-09-20"
+          },
+          "screens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListScreeningsByMovieAndDateScreenGroupDto"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "screens"
+        ]
+      },
+      "MovieSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "example": "Inception"
+          },
+          "posterUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/posters/inception.jpg"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "posterUrl"
+        ]
+      },
+      "MovieDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "example": "Inception"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "A thief who infiltrates dreams is offered a chance to have his criminal record erased if he can implant an idea in a target's mind."
+          },
+          "posterUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/posters/inception.jpg"
+          },
+          "runtime": {
+            "type": "number",
+            "example": 148
+          },
+          "releaseDate": {
+            "type": "string",
+            "example": "2010-07-16"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "posterUrl",
+          "runtime",
+          "releaseDate"
+        ]
+      },
+      "PaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440030"
+          },
+          "bookingId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "status": {
+            "type": "string",
+            "example": "PAID"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-24T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "status",
+          "paidAt"
+        ]
+      },
+      "FailedPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440030"
+          },
+          "bookingId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "status": {
+            "type": "string",
+            "example": "FAILED"
+          },
+          "failedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-24T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "status",
+          "failedAt"
+        ]
+      },
+      "ReconciliationRequiredPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440030"
+          },
+          "bookingId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "status": {
+            "type": "string",
+            "example": "RECONCILIATION_REQUIRED"
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "status"
+        ]
+      },
+      "CreatePaymentDto": {
+        "type": "object",
+        "properties": {
+          "bookingId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          }
+        },
+        "required": [
+          "bookingId"
+        ]
+      },
+      "CreatePaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440030"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "ord_550e8400-e29b-41d4-a716-446655440030"
+          },
+          "amount": {
+            "type": "number",
+            "example": 10000
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "amount",
+          "status"
+        ]
+      },
+      "PayPaymentDto": {
+        "type": "object",
+        "properties": {
+          "paymentKey": {
+            "type": "string",
+            "example": "toss_payment_key"
+          }
+        },
+        "required": [
+          "paymentKey"
+        ]
+      }
+    }
+  }
+}

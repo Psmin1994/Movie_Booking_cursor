@@ -1,0 +1,33 @@
+{
+  "name": "@movie-booking/web",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@movie-booking/api-client": "workspace:*",
+    "@movie-booking/shared": "workspace:*",
+    "@tanstack/react-query": "^5.102.8",
+    "@tosspayments/tosspayments-sdk": "^2.8.1",
+    "next": "15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@movie-booking/typescript-config": "workspace:*",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^15.1.6",
+    "typescript": "^5.7.3"
+  }
+}

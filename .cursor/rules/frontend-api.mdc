@@ -1,0 +1,43 @@
+---
+description: Next.js에서 API Client를 사용하는 규칙
+alwaysApply: true
+---
+
+# API 호출 규칙
+
+## 기본 원칙
+
+- `packages/api-client`의 generated API를 HTTP 구현 대신 사용한다.
+- generated API의 마지막 인자인 `RequestInit`을 활용한다.
+- 페이지와 컴포넌트에서 generated API를 직접 호출하지 않는다.
+- `apps/web/src/lib/api/`의 환경별 request wrapper를 사용한다.
+
+## Client
+
+- Client Component에서는 `client-request.ts`를 사용한다.
+- `next/headers`를 Client 코드에서 사용하지 않는다.
+- 인증 요청은 `credentials: "include"`를 사용하는 `client` fetcher를 통해 호출된다.
+- login / signup / logout 등 Client 전용 API wrapper를 `client-request.ts`에 둔다.
+
+## Server
+
+- Server Component에서는 `server-request.ts`를 사용한다.
+- 인증이 필요한 요청만 Next.js `cookies()`에서 Cookie를 읽어 `RequestInit.headers.Cookie`로 전달한다.
+- 인증이 필요하지 않은 요청은 Cookie를 읽지 않는다.
+- Server에서는 `credentials: "omit"`을 사용한다.
+- `server-request.ts`에서 HTTP 요청을 새로 구현하지 않는다.
+
+## Fetcher
+
+- `fetcher.ts`는 환경을 판단하지 않는다.
+- `fetcher.ts`는 URL 해석, fetch, response parsing만 담당한다.
+- `#fetcher-env`를 통해 Browser/Server fetcher를 선택한다.
+- Browser → `fetcher/client.ts`
+- Server → `fetcher/server.ts`
+
+## 금지
+
+- `apps/web`에서 axios/fetch로 generated API와 동일한 API 요청을 직접 구현하지 않는다.
+- Server Component에서 generated API에 Cookie를 직접 붙이지 않는다.
+- Client Component에서 `next/headers`를 import하지 않는다.
+- 불필요한 generic request wrapper를 추가하지 않는다.

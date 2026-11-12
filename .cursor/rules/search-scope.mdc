@@ -1,0 +1,117 @@
+---
+description: 코드 검색 및 프로젝트 조사 시 기본 대상 범위
+alwaysApply: true
+---
+
+# 검색 및 코드 조사 범위
+
+이 규칙은 코드 검색 및 프로젝트 조사 범위에만 적용한다.
+`.gitignore`나 Git 관리 방식은 변경하지 않는다.
+
+## 기본 원칙
+
+- 소스 코드 분석과 검색은 실제 프로젝트 소스 파일을 우선 대상으로 한다.
+- 검색 범위를 불필요하게 repository 전체로 확장하지 않는다.
+- monorepo에서 작업 대상이 명확한 경우 해당 `apps/*` 또는 `packages/*`의 구체적인 소스 디렉터리를 검색 시작점으로 사용한다.
+- 작업 대상이 명확한 경우 가능한 한 가장 좁은 범위에서 검색을 시작한다.
+
+## 검색 제외 대상
+
+다음 디렉터리는 **검색 대상에서 제외한다.**
+
+- `node_modules/**`
+- `dist/**`
+- `.next/**`
+- `coverage/**`
+
+위 경로는 repository 전체 검색뿐 아니라
+특정 `apps/*` 또는 `packages/*` 내부를 재귀적으로 검색할 때도 제외한다.
+
+예:
+
+- `packages/database-prisma/**`를 검색하더라도
+  - `packages/database-prisma/node_modules/**`
+  - `packages/database-prisma/dist/**`
+    는 검색하지 않는다.
+
+검색 범위를 상위 디렉터리 또는 repository 전체로 확장하더라도
+위 제외 대상은 검색 범위에 포함하지 않는다.
+
+## generated code
+
+generated code는 기본적으로 검색 대상에서 제외한다.
+
+예:
+
+- `generated/**`
+- `**/generated/**`
+- Prisma generated client
+- 기타 build/code generation으로 생성된 파일
+
+generated code가 포함된 패키지를 검색하더라도
+generated code는 검색 범위에서 제외한다.
+
+단, 다음 경우에는 검색할 수 있다.
+
+- 해당 generated code 자체를 조사하는 작업
+- generated code의 사용 방식이나 오류를 확인하기 위해 필요한 경우
+- 사용자가 특정 generated 디렉터리나 파일을 명시한 경우
+
+generated code가 프로젝트 동작에 직접 영향을 주더라도,
+별도의 조사 필요성이 없는 경우에는 기본적으로 검색하지 않는다.
+
+## 검색 우선순위
+
+작업 대상이 명확한 경우 다음 순서로 검색한다.
+
+1. 작업 대상의 실제 소스 디렉터리
+2. 해당 소스에서 직접 import되는 프로젝트 내부 파일
+3. 필요한 경우에만 관련 설정 파일
+4. 위 범위에서 필요한 정보를 찾지 못한 경우에만 상위 디렉터리로 검색 범위를 확장한다.
+
+예:
+
+- API 인증 작업 → `apps/api/src`
+- Next.js 기능 작업 → `apps/web/src`
+- Prisma 작업 → `packages/database-prisma/prisma`, `packages/database-prisma/src`
+
+import 관계를 따라갈 때도 현재 작업에 직접적으로 필요한 파일만 검색한다.
+
+단순히 간접적으로 참조될 가능성이 있다는 이유만으로
+전체 dependency graph를 탐색하지 않는다.
+
+## 검색 범위 확장
+
+작업 대상의 소스 디렉터리에서 필요한 정보를 찾지 못한 경우에만
+상위 디렉터리 또는 repository 전체로 검색 범위를 확장한다.
+
+검색 범위를 확장하기 전에 기존 범위에서 충분한 정보를 얻을 수 있는지 먼저 확인한다.
+
+범위를 확장하는 경우에도 먼저 가장 가까운 관련 디렉터리부터 단계적으로 확장한다.
+
+예:
+
+`apps/api/src`
+→ `apps/api`
+→ repository 전체
+
+와 같이 필요한 범위만 단계적으로 확장한다.
+
+## 프로젝트 내부 package 검색
+
+monorepo의 `packages/*`는 작업 대상과 직접적인 관련이 확인된 경우에만 검색한다.
+
+- 현재 작업에서 실제로 import되거나 사용되는 package,
+  또는 작업을 수행하기 위해 직접적으로 확인해야 하는 package만 검색한다.
+- 단순히 `package.json`의 workspace dependency라는 이유만으로 해당 package를 검색하지 않는다.
+- 현재 작업과 무관한 package의 `ts`, `prisma`, `json` 파일을 일괄 검색하지 않는다.
+
+## 검색 규칙 적용 우선순위
+
+검색 범위를 확장하더라도 검색 제외 대상 규칙을 우선 적용한다.
+
+즉, 작업 대상 범위가 넓어지는 것과
+`node_modules`, `dist`, `.next`, `coverage`, generated code를 검색하는 것은 별개의 문제다.
+
+검색 범위 확장은 허용하지만,
+명시된 검색 제외 대상까지 함께 확장하지 않는다.

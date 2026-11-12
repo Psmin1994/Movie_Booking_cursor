@@ -1,0 +1,16 @@
+{
+  "extends": "@movie-booking/typescript-config/base.json",
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": true,
+    "paths": {
+      "#fetcher-env": ["./src/fetcher/client.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.unit.spec.ts"]
+}

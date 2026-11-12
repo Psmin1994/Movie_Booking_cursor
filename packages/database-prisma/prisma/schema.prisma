@@ -1,0 +1,163 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../generated/client"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime  @default(now())
+  bookings     Booking[]
+}
+
+model Movie {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  posterUrl   String?
+  runtime     Int
+  releaseDate DateTime @db.Date
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  screenings  Screening[]
+}
+
+model Screen {
+  id         String      @id @default(uuid())
+  number     Int         @unique
+  floor      Int
+  screenType String
+  screenings Screening[]
+  seats      Seat[]
+}
+
+model Screening {
+  id             String          @id @default(uuid())
+  movieId        String
+  screenId       String
+  startAt        DateTime
+  movie          Movie           @relation(fields: [movieId], references: [id])
+  screen         Screen          @relation(fields: [screenId], references: [id])
+  screeningSeats ScreeningSeat[]
+  bookings       Booking[]
+
+  @@unique([screenId, startAt])
+}
+
+model Seat {
+  id             String          @id @default(uuid())
+  screenId       String
+  row            String
+  number         Int
+  seatType       String
+  screen         Screen          @relation(fields: [screenId], references: [id])
+  screeningSeats ScreeningSeat[]
+
+  @@unique([screenId, row, number])
+}
+
+model ScreeningSeat {
+  id           String        @id @default(uuid())
+  screeningId  String
+  seatId       String
+  status       String
+  screening    Screening     @relation(fields: [screeningId], references: [id])
+  seat         Seat          @relation(fields: [seatId], references: [id])
+  bookingSeats BookingSeat[]
+
+  @@unique([screeningId, seatId])
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  userId       String
+  screeningId  String
+  /// PENDING, CONFIRMED, FAILED, EXPIRED, CANCELLED
+  status       String
+  totalAmount  Int
+  createdAt    DateTime      @default(now())
+  expiresAt    DateTime
+  confirmedAt  DateTime?
+  failedAt     DateTime?
+  cancelledAt  DateTime?
+  user         User          @relation(fields: [userId], references: [id])
+  screening    Screening     @relation(fields: [screeningId], references: [id])
+  bookingSeats BookingSeat[]
+  payment      Payment?
+}
+
+model Payment {
+  id                     String    @id @default(uuid())
+  bookingId              String    @unique
+  orderId                String    @unique
+  paymentKey             String?   @unique
+  /// PENDING, AUTHORIZING, PAID, FAILED, EXPIRED, CANCELED, RECONCILIATION_REQUIRED
+  status                 String
+  amount                 Int
+  createdAt              DateTime  @default(now())
+  paidAt                 DateTime?
+  failedAt               DateTime?
+  authorizationExpiresAt DateTime?
+  booking                Booking                @relation(fields: [bookingId], references: [id])
+  refunds                Refund[]
+  reconciliation         PaymentReconciliation?
+}
+
+model PaymentReconciliation {
+  id            String    @id @default(uuid())
+  paymentId     String    @unique
+  /// SCHEDULED, REVIEW, COMPLETED
+  status        String
+  /// Final adjudication only: NOT_PAID, REFUND_CREATED, UNRESOLVED, IDENTITY_MISMATCH
+  result        String?
+  createdAt     DateTime
+  nextProcessAt DateTime?
+  /// Fixed end of automatic retry window from openedAt
+  retryDeadline DateTime
+  completedAt   DateTime?
+  leaseToken    String?
+  leaseUntil    DateTime?
+  payment       Payment   @relation(fields: [paymentId], references: [id])
+}
+
+model Refund {
+  id                String    @id @default(uuid())
+  paymentId         String    @unique
+  amount            Int
+  /// PENDING, COMPLETED, FAILED, REVIEW
+  status            String
+  /// Snapshot used for idempotent PG cancel recovery
+  idempotencyKey    String    @unique
+  paymentKey        String
+  cancelReason      String
+  cancelRequestedAt DateTime?
+  /// Requires cancelRequestedAt when set (DB CHECK Refund_transactionKey_requires_cancelRequestedAt)
+  transactionKey    String?   @unique
+  createdAt         DateTime  @default(now())
+  completedAt       DateTime?
+  failedAt          DateTime?
+  /// Worker lease; independent of refund domain status
+  leaseToken        String?
+  leaseUntil        DateTime?
+  payment           Payment   @relation(fields: [paymentId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model BookingSeat {
+  id              String        @id @default(uuid())
+  bookingId       String
+  screeningSeatId String
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  screeningSeat   ScreeningSeat @relation(fields: [screeningSeatId], references: [id])
+}

@@ -1,0 +1,85 @@
+---
+description: Backend API endpoint 설계 원칙
+alwaysApply: true
+---
+
+# Backend API endpoint 설계
+
+HTTP method와 path를 먼저 정하지 않는다. 다음 순서로 설계한다.
+
+1. 어떤 Use Case인가?
+2. 새로운 리소스를 생성하는가?
+3. 리소스를 조회하는가?
+4. 기존 리소스의 명시적인 도메인 상태 전이 또는 행위인가?
+5. 그 분류에 맞는 HTTP method와 path를 결정한다.
+
+상태가 바뀐다는 이유만으로 `PATCH`를 고르거나, 삭제처럼 보인다는 이유만으로 `DELETE`를 고르지 않는다.
+
+Endpoint를 추가하거나 변경할 때의 순서는 다음과 같다.
+
+Use Case 분류 → Resource / Domain Action 판단 → HTTP method/path 결정 → Controller contract 구현
+
+기존 endpoint와 일관성을 유지한다. 기존 endpoint가 이 Rule과 다르다는 이유만으로 일괄 migration하지 않는다. 새 endpoint가 이 원칙에서 벗어나면 구현 전에 그 이유를 설명한다.
+
+## Resource-oriented API
+
+도메인 리소스의 생성과 조회는 명사 중심의 resource path를 사용한다.
+
+- 생성: `POST /{resources}`
+- 단건 조회: `GET /{resources}/:id`
+- 컬렉션 조회: `GET /{resources}`
+- 부모-자식 컬렉션 조회: `GET /{parent}/:id/{childCollection}`
+
+예:
+
+- `POST /bookings`
+- `GET /bookings`
+- `GET /screenings/:screeningId`
+- `GET /movies/:movieId/screenings`
+
+부모-자식 경로의 마지막 조각은 자식 컬렉션이다. 명령이 아니다.
+
+## Domain Action / State Transition
+
+기존 리소스의 상태 변경이 단순 CRUD property update가 아니라 명시적인 도메인 행위라면 action을 endpoint에 표현한다.
+
+`POST /{resource}/:id/{useCase}`
+
+예: `POST /bookings/:bookingId/cancel`
+
+`cancel`은 HTTP 동작명이 아니라 `CancelBooking` Use Case를 표현한다. action 이름은 그 Use Case의 의미와 일치해야 한다.
+
+## Creation과 Domain Action
+
+리소스 생성 과정에서 초기 상태를 설정하거나 관련 데이터를 함께 만드는 것은 별도 action endpoint로 분리하지 않는다.
+
+`CreateBooking`이 Booking을 `CONFIRMED`로 만들고 BookingSeat를 함께 기록하는 것은 `POST /bookings`의 생성 Use Case다.
+
+이미 존재하는 Booking을 `CANCELLED`로 전이하는 `CancelBooking`은 action endpoint로 표현할 수 있다.
+
+## 단순 CRUD와 Domain Action
+
+모든 상태 변경을 action endpoint로 만들지 않는다. 단순한 리소스 속성 수정과 명확한 도메인 행위를 구분한다.
+
+도메인 행위가 별도의 Use Case로 존재하고, 그 행위 자체가 API의 의미일 때 action endpoint를 고려한다.
+
+## Auth / Health
+
+다음 namespace는 domain resource/action 규칙과 별도로 둔다.
+
+- `/auth/*`: signup, login, logout 같은 인증 프로세스
+- `/health`: 운영/인프라 상태 확인
+
+이 Rule 때문에 기존 Auth/Health endpoint를 임의로 변경하지 않는다.
+
+## Controller와 Use Case
+
+Controller는 HTTP method/path, request parameter/body, authentication/authorization guard, HTTP status code, DTO, Swagger/OpenAPI contract를 담당한다.
+
+Use Case/Application Service는 비즈니스 행위, domain invariant, transaction boundary, repository 호출 orchestration을 담당한다.
+
+## 다른 Rule과의 관계
+
+이 Rule은 endpoint의 resource/action 설계 판단만 담당한다.
+
+API contract 생성과 검증은 `project-architecture.mdc`를 따른다. Controller → Swagger/OpenAPI → OpenAPI contract → Orval → api-client 흐름은 여기서 다시 정의하지 않는다.

@@ -1,0 +1,20 @@
+{
+  "name": "movie-booking",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:web": "pnpm --filter @movie-booking/web dev",
+    "dev:api": "pnpm --filter @movie-booking/api dev",
+    "generate:openapi": "pnpm --filter @movie-booking/api generate:openapi",
+    "generate:api-client": "pnpm --filter @movie-booking/api-client generate",
+    "build": "pnpm --filter @movie-booking/shared build && pnpm --filter @movie-booking/api-client build && pnpm --filter \"./apps/*\" build",
+    "lint": "pnpm --parallel --filter \"./apps/*\" --filter \"./packages/*\" lint",
+    "typecheck": "pnpm --parallel --filter \"./apps/*\" --filter \"./packages/*\" typecheck",
+    "test": "pnpm --filter @movie-booking/api test",
+    "test:e2e": "pnpm --filter @movie-booking/api test:e2e"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

@@ -1,0 +1,14 @@
+{
+  "terminalAllowlist": ["pnpm", "git status", "git diff"],
+  "autoRun": {
+    "allow_instructions": [
+      "Development commands using pnpm in this repository are safe to run without asking for approval.",
+      "Read-only git commands such as git status and git diff are safe to run without asking for approval."
+    ],
+    "block_instructions": [
+      "Always ask for approval before deleting files or directories.",
+      "Always ask for approval before running git reset, git clean, git checkout, git restore, or git push.",
+      "Always ask for approval before running database migrations or destructive database commands."
+    ]
+  }
+}

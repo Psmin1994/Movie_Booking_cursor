@@ -1,0 +1,94 @@
+---
+description: 영화 예매 프로젝트의 핵심 아키텍처 및 개발 규칙
+alwaysApply: true
+---
+
+# 프로젝트 아키텍처
+
+## Monorepo
+
+- 이 프로젝트는 pnpm workspace 기반의 monorepo이다.
+- 명시적으로 구조 변경을 요청하지 않는 한 현재 monorepo 구조를 유지한다.
+- 애플리케이션은 `apps/` 아래에 위치한다.
+- 공유 패키지는 `packages/` 아래에 위치한다.
+
+현재 구조:
+
+- `apps/web`: Next.js 프론트엔드
+- `apps/api`: NestJS 백엔드
+- `packages/api-client`: OpenAPI 기반 생성 API Client
+- `packages/shared`: 여러 애플리케이션에서 실제로 공유해야 하는 코드
+- `packages/typescript-config`: 공통 TypeScript 설정
+
+## Frontend
+
+- `apps/web`은 Next.js App Router를 사용한다.
+- 백엔드 API 통신은 `@movie-booking/api-client`를 사용한다.
+- `apps/web`에서 `packages/api-client/src`의 파일을 직접 import하지 않는다.
+- API request/response 타입을 `apps/web`에서 중복 정의하지 않는다.
+- API와 무관한 UI 전용 타입은 `apps/web` 내부에서 관리한다.
+
+## Backend
+
+- `apps/api`는 NestJS를 사용한다.
+- NestJS의 Module, Controller, Service, DTO, Dependency Injection 등의 기본 구조와 관례를 따른다.
+- API의 request/response DTO는 NestJS DTO class로 정의한다.
+- API에 노출되는 DTO에는 필요한 Swagger decorator를 적용한다.
+- 백엔드 전용 구현은 `apps/api` 내부에서 관리한다.
+
+## API Contract
+
+API 계약은 다음 흐름을 따른다.
+
+NestJS
+→ Swagger
+→ `apps/api/openapi.json`
+→ Orval
+→ `packages/api-client`
+→ `apps/web`
+
+- `apps/api/openapi.json`은 NestJS 애플리케이션으로부터 생성한다.
+- `packages/api-client`는 OpenAPI specification을 기반으로 Orval을 사용해 생성한다.
+- 생성된 파일은 직접 수정하지 않는다.
+- API 계약이 변경되면 OpenAPI specification과 API Client를 다시 생성한다.
+- 프론트엔드에서 생성된 API 타입을 별도로 중복 정의하지 않는다.
+
+## API Client
+
+- `packages/api-client`는 프론트엔드와 백엔드 API 사이의 경계 역할을 한다.
+- `apps/web`에서는 `@movie-booking/api-client`가 제공하는 API 함수를 사용한다.
+- 백엔드 endpoint를 `apps/web`에서 직접 호출하지 않는다.
+- 현재 custom `fetcher`는 단순한 구조를 유지한다.
+- 별도의 요구사항이 없는 한 Axios 또는 다른 HTTP Client를 추가하지 않는다.
+- 별도의 요구사항이 확정되지 않은 상태에서 인증, 에러 정규화, retry, caching 등의 기능을 fetcher에 추가하지 않는다.
+
+## Shared Package
+
+- `packages/shared`에는 실제로 여러 애플리케이션에서 공유해야 하는 코드만 추가한다.
+- 백엔드 전용 DTO나 프론트엔드 전용 타입을 무분별하게 `packages/shared`로 이동하지 않는다.
+- 필요하지 않은 공통 abstraction을 미리 만들지 않는다.
+- 동일한 개념을 여러 애플리케이션에서 공유해야 하는 경우 `packages/shared`에 둘 필요가 있는지 먼저 판단한다.
+
+## 변경 원칙
+
+- 작은 단위로 점진적으로 변경한다.
+- 기존에 정상적으로 동작하는 기능을 유지한다.
+- 새로운 기능을 구현하면서 관련 없는 코드를 리팩터링하지 않는다.
+- 코드를 변경하기 전에 관련된 기존 구현과 프로젝트 내 유사한 구현을 먼저 확인한다.
+- 새로운 abstraction을 만들기 전에 기존 프로젝트의 패턴으로 해결할 수 있는지 확인하고 재사용한다.
+- 명확한 이유 없이 새로운 library나 architecture pattern을 추가하지 않는다.
+- 구조적 또는 아키텍처 변경이 필요한 경우 변경 전에 그 이유를 설명한다.
+- 단순한 코드 스타일 선호 때문에 기존 architecture를 변경하지 않는다.
+
+## 검증
+
+변경 후에는 가능한 범위에서 다음을 확인한다.
+
+1. TypeScript compilation을 확인한다.
+2. 관련 테스트를 실행한다.
+3. API contract가 변경된 경우 `openapi.json`을 다시 생성한다.
+4. `openapi.json`이 변경된 경우 `packages/api-client`를 다시 생성한다.
+5. 영향을 받는 package와 application을 build한다.
+6. 검증 과정에서 발생한 오류를 확인하고 가능한 경우 수정한다.
+7. 실행하지 못한 검증이 있다면 그 이유를 명확히 보고한다.
+8. 기존 기능이 정상적으로 동작하는지 확인한다.

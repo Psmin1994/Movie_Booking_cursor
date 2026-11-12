@@ -1,0 +1,154 @@
+---
+description: Backend 테스트 계층과 책임 경계 설계 원칙
+alwaysApply: true
+---
+
+# Backend Test Architecture
+
+테스트의 계층과 범위를 먼저 정하지 않는다. 다음 순서로 판단한다.
+
+1. 무엇을 보장해야 하는가?
+2. 그 보장은 어느 책임 경계에 속하는가?
+3. Unit / Integration / Concurrency / E2E 중 어떤 계층인가?
+4. 기존 테스트가 같은 계약을 이미 보호하고 있는가?
+5. 선택한 계층에서 해당 계약만 검증하고 있는가?
+
+테스트는 구현을 감시하기 위한 것이 아니라 계약과 business invariant를 보호하기 위해 작성한다.
+
+## Test Classification
+
+테스트 파일은 다음 suffix를 사용한다.
+
+* `*.unit.spec.ts`
+* `*.int.spec.ts`
+* `*.concurrency.spec.ts`
+* `*.e2e.spec.ts`
+
+HTTP를 사용한다는 이유만으로 E2E로 분류하지 않는다.
+사용자 business journey를 검증하는지, 기술적 경계를 검증하는지를 기준으로 분류한다.
+
+### Unit
+
+독립된 component의 책임을 검증한다.
+
+* 실제 PostgreSQL transaction을 사용하지 않는다.
+* 실제 PostgreSQL row lock 경쟁을 검증하지 않는다.
+* 사용자 business journey 전체를 검증하지 않는다.
+* Repository Unit Test는 persistence contract를 검증한다.
+* transaction orchestration과 실제 DB concurrency는 다른 테스트 계층의 책임이다.
+
+### Integration
+
+실제 기술적 경계를 검증한다.
+
+예:
+
+* Nest application과 PostgreSQL의 transaction / rollback
+* OpenAPI document 생성
+* HTTP를 통한 OpenAPI document 노출
+
+HTTP를 사용하더라도 기술적 경계를 검증하는 테스트라면 Integration으로 분류할 수 있다.
+
+### Concurrency
+
+실제 PostgreSQL의 transaction 경쟁과 그 결과를 검증한다.
+
+* 실제 DB connection과 transaction을 사용한다.
+* 실제 row lock, conditional update, transaction ordering 등의 경쟁 조건을 검증한다.
+* concurrency 자체를 mock으로 재현하지 않는다.
+* Repository의 SQL contract와 실제 PostgreSQL lock 경쟁은 서로 다른 책임이다.
+
+### E2E
+
+HTTP를 통한 사용자 business journey와 최종 상태를 검증한다.
+
+* 하나의 business transition에 여러 domain state가 포함될 수 있다.
+* 외부 시스템은 test double로 대체할 수 있다.
+
+  * 예: Payment Gateway
+* Repository / Service / Prisma의 내부 호출 자체를 검증하지 않는다.
+
+## Test Location
+
+테스트 위치는 Jest의 collection 구조와 일치시킨다.
+
+* `apps/api/src/**` → Unit
+* `apps/api/test/**` → Integration / Concurrency / E2E
+
+테스트 suffix만으로 계층을 판단하지 않는다.
+파일 위치와 Jest configuration의 `rootDir` 및 collection 설정을 함께 확인한다.
+
+## Test Intent
+
+각 테스트 파일의 최상단에 `Test Intent`를 작성한다.
+
+`Test Intent`는 테스트가 보호하는 다음 내용을 설명한다.
+
+* contract
+* state transition
+* business invariant
+
+다음과 같은 구현 세부사항을 Test Intent의 기준으로 삼지 않는다.
+
+* Prisma method
+* mock 호출 순서
+* Service 호출
+* fixture의 구체적인 구성
+
+실제 assertion은 Test Intent가 설명하는 계약과 일치해야 한다.
+
+## Responsibility Boundary
+
+각 테스트 계층은 자신의 책임 범위를 넘어서지 않는다.
+
+* Unit → component responsibility
+* Integration → technical / framework / infrastructure boundary
+* Concurrency → PostgreSQL competition + business invariant
+* E2E → user / business journey + final state
+
+다른 domain의 데이터가 assertion에 포함되었다는 이유만으로 책임 경계를 침범했다고 판단하지 않는다.
+하나의 business transition을 검증하기 위해 필요한 상태라면 같은 테스트에서 검증할 수 있다.
+
+## Coverage
+
+같은 코드나 데이터가 여러 테스트 계층에서 등장한다고 해서 자동으로 중복 테스트로 판단하지 않는다.
+
+중복을 제거하기 전에 어떤 테스트가 해당 계약을 authoritative하게 보호하고 있는지 확인한다.
+
+Coverage를 줄이는 방향으로 테스트를 단순화하지 않는다.
+
+## Jest Script
+
+Backend test script의 소유자는 `apps/api/package.json`이다.
+
+* `test` → Unit
+* `test:watch` → Unit
+* `test:cov` → Unit
+* `test:int` → Integration
+* `test:concurrency` → Concurrency
+* `test:e2e` → E2E
+* `test:all` → 위 테스트를 기존 script를 통해 순차 실행
+
+`test:all`을 위해 Jest configuration이나 테스트 명령을 중복해서 정의하지 않는다.
+
+## Test Failure
+
+테스트 실패는 다음 순서로 판단한다.
+
+1. production bug
+2. test bug
+3. test classification issue
+4. environment / configuration issue
+5. flaky test
+
+테스트를 통과시키기 위해 production code를 임의로 변경하거나 assertion을 약화하지 않는다.
+
+Concurrency 테스트가 실패하면 실제 race condition과 business invariant를 먼저 확인한다.
+
+## 다른 Rule과의 관계
+
+API endpoint 설계는 `api-design.mdc`가 담당한다.
+
+Swagger / OpenAPI pipeline과 application architecture는 `project-architecture.mdc`가 담당한다.
+
+Repository / Use Case / Transaction의 production 구조는 Test Rule에서 다시 정의하지 않는다.
